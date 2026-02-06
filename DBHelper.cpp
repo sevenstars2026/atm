@@ -50,9 +50,8 @@ double DBHelper::getBalance(string card_id) {
         pqxx::nontransaction N(*C);
 
         // 【统一使用 card_num】(你刚才报错就是因为这里写了 card_number)
-        string sql = "SELECT balance FROM accounts WHERE card_num = '" + card_id + "'";
-
-        pqxx::result R = N.exec(sql);
+        string sql = "SELECT balance FROM accounts WHERE card_num = $1";
+        pqxx::result R = N.exec_params(sql,card_id);
 
         if (!R.empty()) {
             return R[0][0].as<double>();
@@ -70,8 +69,8 @@ bool DBHelper::withdraw(string card_id, double amount) {
         pqxx::work W(*C);
 
         // 【统一使用 card_num】
-        string check_sql = "SELECT balance FROM accounts WHERE card_num = '" + card_id + "'";
-        pqxx::result R = W.exec(check_sql);
+        string check_sql = "SELECT balance FROM accounts WHERE card_num = $1";
+        pqxx::result R = W.exec_params(check_sql,card_id,amount);
 
         if (R.empty()) return false;
 
