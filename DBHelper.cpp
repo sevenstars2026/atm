@@ -1,78 +1,97 @@
 #include "DBHelper.h"
 
-// 1. 构造函数：连接数据库
+// 构造函数：负责连接数据库
 DBHelper::DBHelper() {
     try {
-        // 记得改密码！password=你的密码
         string conn_str = "dbname=postgres user=postgres password=123456 host=localhost port=5432";
         C = new pqxx::connection(conn_str);
-        
+
         if (C->is_open()) {
-            cout << "[DB] 数据库连接成功: " << C->dbname() << endl;
+            cout << "[DB] 连接成功: " << C->dbname() << endl;
         } else {
-            cout << "[DB] 连接失败！" << endl;
+            cout << "[DB] 连接失败!" << endl;
         }
     } catch (const exception &e) {
         cerr << "[DB] 连接发生错误: " << e.what() << endl;
     }
 }
 
-// 2. 析构函数：断开连接
-// 修改后的析构函数
+// 析构函数
 DBHelper::~DBHelper() {
     if (C) {
-        // 不需要调用 disconnect()，delete 指针时连接会自动关闭
         delete C;
-        cout << "[DB] 连接已断开" << endl;
     }
 }
 
-// 3. 登录功能实现
-string DBHelper::handleLogin(string card, string pwd) {
+// 1. 登录功能
+string DBHelper::handleLogin(string card_id, string pwd) {
+    if (!C || !C->is_open()) return "";
     try {
-        // 建立一个“非事务”的工作对象 (只读用这个)
-        pqxx::nontransaction N(*C);
+        pqxx::work W(*C);
 
-        // 拼凑 SQL：注意单引号！
-        // 也就是：SELECT name FROM accounts WHERE card_number='...' AND password='...'
-        string sql = "SELECT name FROM accounts WHERE card_number = '" + card + 
-                     "' AND password = '" + pwd + "'";
+        // 【统一使用 card_num】
+        string sql = "SELECT card_num FROM accounts WHERE card_num = $1 AND password = $2";
 
-        // 执行查询
-        pqxx::result R = N.exec(sql);
+        pqxx::result R = W.exec_params(sql,card_id,pwd);
 
-        // 如果结果集是空的，说明没查到
-        if (R.empty()) {
-            return ""; // 返回空字符串表示失败
+        if (!R.empty()) {
+            return R[0][0].as<string>();
         }
-
-        // 查到了，提取第一行(R[0])的"name"列，转成 string
-        return R[0]["name"].as<string>();
-
     } catch (const exception &e) {
-        cerr << "[Login] 查询出错: " << e.what() << endl;
-        return "";
+        cerr << "[Login Error] " << e.what() << endl;
     }
+    return "";
 }
 
-// 4. 查询余额实现
-double DBHelper::getBalance(string card) {
+// 2. 查余额功能
+double DBHelper::getBalance(string card_id) {
+    if (!C || !C->is_open()) return 0.0;
     try {
         pqxx::nontransaction N(*C);
-        
-        string sql = "SELECT balance FROM accounts WHERE card_number = '" + card + "'";
-        
+
+        // 【统一使用 card_num】(你刚才报错就是因为这里写了 card_number)
+        string sql = "SELECT balance FROM accounts WHERE card_num = '" + card_id + "'";
+
         pqxx::result R = N.exec(sql);
-        
-        if (R.empty()) {
-            return 0.0;
+
+        if (!R.empty()) {
+            return R[0][0].as<double>();
         }
-        
-        // 把结果转成 double (小数)
-        return R[0]["balance"].as<double>();
-        
     } catch (const exception &e) {
-        cerr << "[Balance] 查询出错: " << e.what() << endl;
-        return 0.0;
+        cerr << "[Balance Error] " << e.what() << endl;
+    }
+    return 0.0;
+}
+
+// 3. 取款功能
+bool DBHelper::withdraw(string card_id, double amount) {
+    if (!C || !C->is_open()) return false;
+    try {
+        pqxx::work W(*C);
+
+        // 【统一使用 card_num】
+        string check_sql = "SELECT balance FROM accounts WHERE card_num = '" + card_id + "'";
+        pqxx::result R = W.exec(check_sql);
+
+        if (R.empty()) return false;
+
+        double current_balance = R[0][0].as<double>();
+
+        if (current_balance < amount) {
+            cout << ">>> 余额不足！当前余额: " << current_balance << endl;
+            return false;
+        }
+
+        // 【统一使用 card_num】
+        string update_sql = "UPDATE accounts SET balance = balance - " + to_string(amount) +
+                            " WHERE card_num = '" + card_id + "'";
+
+        W.exec(update_sql);
+        W.commit();
+        return true;
+
+    } catch (const exception &e) {
+        cerr << "[Withdraw Error] " << e.what() << endl;
+        return false;
     }
 }

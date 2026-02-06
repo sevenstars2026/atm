@@ -1,35 +1,29 @@
-#ifndef DBHELPER_H
-#define DBHELPER_H
+#ifndef ATM_DBHELPER_H
+#define ATM_DBHELPER_H
 
+#include <iostream>
 #include <string>
 #include <pqxx/pqxx> // 引入数据库库
-#include <iostream>
 
 using namespace std;
 
 class DBHelper {
-private:
-    pqxx::connection* C; // 这是一个指针，指向与数据库的连接线
-
 public:
-    // 构造函数：一出生就自动连接数据库
+    // 构造函数和析构函数
     DBHelper();
-    // 析构函数：任务结束自动断开
     ~DBHelper();
 
-    // ----------------------------------------------------
-    // 功能 1：登录验证
-    // 输入：卡号，密码
-    // 返回：如果成功返回用户名(比如"张三")，失败返回空字符串 ""
-    string handleLogin(string card, string pwd);
+    // 1. 登录
+    string handleLogin(string card_id, string pwd);
 
-    // 功能 2：查询余额
-    // 输入：卡号
-    // 返回：余额数字
-    double getBalance(string card);
+    // 2. 查余额
+    double getBalance(string card_id);
 
-    // ----------------------------------------------------
-    // 这里的“转账、取款”我们下一轮再写，先把上面两个跑通！
+    // 3. 取款 (你之前缺的就是这一行声明！)
+    bool withdraw(string card_id, double amount);
+
+private:
+    pqxx::connection *C; // 数据库连接对象
 };
 
-#endif //DBHELPER_H
+#endif //ATM_DBHELPER_H
