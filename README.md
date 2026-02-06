@@ -17,12 +17,6 @@ W.exec(sql);
 2. 解决方案：参数化查询 (Prepared Statements)
 参考业界标准做法，我引入了 exec_params 函数来重构所有的数据库交互逻辑。
 
-修复后的代码：
-
-C++
-// ✅ 安全的代码示例
-string sql = "SELECT balance FROM accounts WHERE card_num = $1";
-pqxx::result R = W.exec_params(sql, card_id);
 3. 原理解析
 指令与数据分离：我们不再手动拼凑完整的 SQL 语句，而是先发送一个带有占位符（如 $1）的指令模板给数据库。
 
