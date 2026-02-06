@@ -1,6 +1,7 @@
 #include "DBHelper.h"
 
 // 构造函数：负责连接数据库
+// PR Audit: 提交给junjieyu进行安全审核 2026-02-06
 DBHelper::DBHelper() {
     try {
         string conn_str = "dbname=postgres user=postgres password=123456 host=localhost port=5432";
