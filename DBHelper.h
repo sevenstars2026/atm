@@ -22,6 +22,8 @@ public:
     // 3. 取款 (你之前缺的就是这一行声明！)
     bool withdraw(string card_id, double amount);
 
+    bool transfer(string card_id1,string card_id2,double amount);
+
 private:
     pqxx::connection *C; // 数据库连接对象
 };

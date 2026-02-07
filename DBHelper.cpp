@@ -70,7 +70,7 @@ bool DBHelper::withdraw(string card_id, double amount) {
 
         // 【统一使用 card_num】
         string check_sql = "SELECT balance FROM accounts WHERE card_num = $1";
-        pqxx::result R = W.exec_params(check_sql,card_id,amount);
+        pqxx::result R = W.exec_params(check_sql,card_id);
 
         if (R.empty()) return false;
 
@@ -82,15 +82,44 @@ bool DBHelper::withdraw(string card_id, double amount) {
         }
 
         // 【统一使用 card_num】
-        string update_sql = "UPDATE accounts SET balance = balance - " + to_string(amount) +
-                            " WHERE card_num = '" + card_id + "'";
+        string update_sql = "UPDATE accounts SET balance = balance - $1 WHERE card_num = $2";
 
-        W.exec(update_sql);
+        W.exec_params(update_sql,amount,card_id);
         W.commit();
         return true;
 
     } catch (const exception &e) {
         cerr << "[Withdraw Error] " << e.what() << endl;
+        return false;
+    }
+}
+bool DBHelper::transfer(string card_id1, string card_id2,double amount) {
+    if (!C || !C->is_open()) return false;
+    try {
+        pqxx::work W(*C);
+
+        string check_sql ="SELECT balance FROM accounts WHERE card_num = $1";
+
+        pqxx::result R=W.exec_params(check_sql,card_id1);
+
+        if (R.empty()) return false;
+
+        double current_balance = R[0][0].as<double>();
+
+        if (current_balance < amount) {
+            cout << ">>> 余额不足！当前余额: " << current_balance << endl;
+            return false;
+        }
+        string update_sql = "UPDATE accounts SET balance = balance - $1 WHERE card_num = $2";
+        string update_sql2 = "UPDATE accounts SET balance = balance + $1 WHERE card_num =$3";
+        W.exec_params(update_sql,amount,card_id1);
+        W.exec_params(update_sql2,amount,card_id2);
+        W.commit();
+        return true;
+
+    }catch (const exception &e) {
+
+        cerr << "[Transfer Error] " << e.what() << endl;
         return false;
     }
 }
