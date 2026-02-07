@@ -42,16 +42,4 @@
 * **构建系统:** CMake
 * **依赖库:** `libpqxx` (PostgreSQL C++ API), `libpq`
 
-## 🚀 快速开始
 
-### 1. 环境准备 (Ubuntu)
-在终端执行以下命令安装必要的编译器和依赖库：
-
-```bash
-sudo apt-get update
-# 安装编译器和 CMake
-sudo apt-get install build-essential cmake
-# 安装 PostgreSQL 数据库
-sudo apt-get install postgresql postgresql-contrib
-# 安装 C++ 连接库
-sudo apt-get install libpqxx-dev
