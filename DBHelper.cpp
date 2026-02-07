@@ -114,6 +114,8 @@ bool DBHelper::transfer(string card_id1, string card_id2,double amount) {
         string update_sql2 = "UPDATE accounts SET balance = balance + $1 WHERE card_num =$3";
         W.exec_params(update_sql,amount,card_id1);
         W.exec_params(update_sql2,amount,card_id2);
+        string log_sql = "INSERT INTO records (from_card, to_card, amount, type) VALUES ($1, $2, $3, 'TRANSFER')";
+        W.exec_params(log_sql, card_id1, card_id2, amount);
         W.commit();
         return true;
 
