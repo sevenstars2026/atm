@@ -127,16 +127,16 @@ bool DBHelper::transfer(string card_id1, string card_id2,double amount) {
 }
 bool DBHelper::changePassword(string card_id,string pwd1,string pwd2) {
     if (!C || !C->is_open()) return false;
+    if (pwd1==pwd2) {
+        cerr<<"新密码不能与旧密码相同！"<<endl;
+        return false;
+    }
     try {
         pqxx::work W(*C);
         string check_sql ="SELECT password FROM accounts WHERE card_num = $1 AND password = $2";
         pqxx::result R = W.exec_params(check_sql,card_id,pwd1);
         if (R.empty()) {
             cerr << "旧密码错误，无法修改密码！" << endl;
-            return false;
-        }
-        if (pwd1==pwd2) {
-            cerr<<"新密码不能与旧密码相同！"<<endl;
             return false;
         }
         string sql="UPDATE accounts  SET password = $1 WHERE card_num = $2";
