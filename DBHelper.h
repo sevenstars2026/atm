@@ -24,6 +24,8 @@ public:
 
     bool transfer(string card_id1,string card_id2,double amount);
 
+    bool changePassword(string card_id,string pwd1,string pwd2);
+
 private:
     pqxx::connection *C; // 数据库连接对象
 };
